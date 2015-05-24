@@ -15,7 +15,7 @@ double Kp1 = 0.8;
 double Kp2 = 4.0;
 double Ki = 15;   // 1.2/4.0
 double Kd = 0.18; //15.0*2.0; //10.0
-double K  = 1.0;
+double K  = 6.0;
 //double K  = 1.9*1.12;
 
 
@@ -122,11 +122,14 @@ void pid()
 {
   error = last_y - angle_offset - forward_offset;
 
+/*
   if (error <= 2.0 && error >= -2.0) {
       Kp = Kp1;
   } else {
       Kp = Kp2;
   }
+*/
+  Kp = Kp2;
 
   pTerm = Kp * error;
 
