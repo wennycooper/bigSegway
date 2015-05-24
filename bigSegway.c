@@ -11,8 +11,10 @@
 
 // PID parameters
 double Kp = 4.0;  //8.0
+double Kp1 = 0.8;
+double Kp2 = 4.0;
 double Ki = 15;   // 1.2/4.0
-double Kd = 0.12; //15.0*2.0; //10.0
+double Kd = 0.18; //15.0*2.0; //10.0
 double K  = 1.0;
 //double K  = 1.9*1.12;
 
@@ -109,7 +111,7 @@ double constrain(double v, double min_v, double max_v)
 double error, last_error, integrated_error;
 double pTerm, iTerm, dTerm;
 double angle;
-double angle_offset = -1.0;
+double angle_offset = -0.0;
 
 double speed;
 double left_offset = 0.0;
@@ -119,6 +121,12 @@ double forward_offset = 0.0;
 void pid()
 {
   error = last_y - angle_offset - forward_offset;
+
+  if (error <= 2.0 && error >= -2.0) {
+      Kp = Kp1;
+  } else {
+      Kp = Kp2;
+  }
 
   pTerm = Kp * error;
 
@@ -234,7 +242,7 @@ init_point:
   
 
   // wait for START
-  wait_for_start();
+  //wait_for_start();
 
   fd = wiringPiI2CSetup (0x68);
   wiringPiI2CWriteReg8 (fd,0x6B,0x00);//disable sleep mode 
