@@ -10,13 +10,15 @@
 
 
 // PID parameters
-double Kp = 4.0;  //8.0
+double Kp = 12.0;  //8.0
 double Kp1 = 0.8;
 double Kp2 = 4.0;
-double Ki = 15;   // 1.2/4.0
-double Kd = 0.18; //15.0*2.0; //10.0
-double K  = 6.0;
+double Ki = 20;   // 1.2/4.0
+double Kd = 0.25; //15.0*2.0; //10.0
+double K  = 1.0;
 //double K  = 1.9*1.12;
+
+double GUARD_GAIN = 90.0;
 
 
 // Complimentary Filter parameters
@@ -111,7 +113,7 @@ double constrain(double v, double min_v, double max_v)
 double error, last_error, integrated_error;
 double pTerm, iTerm, dTerm;
 double angle;
-double angle_offset = -0.0;
+double angle_offset = -7.0;
 
 double speed;
 double left_offset = 0.0;
@@ -129,7 +131,7 @@ void pid()
       Kp = Kp2;
   }
 */
-  Kp = Kp2;
+//  Kp = Kp2;
 
   pTerm = Kp * error;
 
@@ -140,7 +142,7 @@ void pid()
   dTerm = Kd * (error - last_error) / deltaT;
   last_error = error;
 
-  speed = constrain(K*(pTerm + iTerm + dTerm), -100.0, +100.0); 
+  speed = constrain(K*(pTerm + iTerm + dTerm), -GUARD_GAIN, GUARD_GAIN); 
   
 }
 

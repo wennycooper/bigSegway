@@ -10,24 +10,29 @@ void init_motors()
 {
   wiringPiSetup();
 
-  // initialize left motor (0:pwm, 2:in1 & 3:in2)
+  // initialize left motor (0:pwm, 2:pwm & 3:ce)
   softPwmCreate(0, INITIAL_VALUE, RANGE);
-  pinMode(2, OUTPUT);
+  softPwmCreate(2, INITIAL_VALUE, RANGE);
   pinMode(3, OUTPUT);
   softPwmWrite(0, 0);
+  softPwmWrite(2, 0);
 
-  // initialize right motor (4:pwm, 5:in3 & 6:in4)
+  // initialize right motor (4:pwm, 5:pwm & 6:ce)
   softPwmCreate(4, INITIAL_VALUE, RANGE);
-  pinMode(5, OUTPUT);
+  softPwmCreate(5, INITIAL_VALUE, RANGE); 
   pinMode(6, OUTPUT);
 
   softPwmWrite(4, 0);
+  softPwmWrite(5, 0);
 }
 
 void stop_motors()
 {
   softPwmWrite(0, 0);
+  softPwmWrite(2, 0);
+
   softPwmWrite(4, 0);
+  softPwmWrite(5, 0);
 }
 
 double left_speed;
@@ -35,10 +40,10 @@ double right_speed;
 
 void motors(double speed, double left_offset, double right_offset)
 {
-// pin 0:pwm, 2:in1, 3:in2
-// pin 4:pwm, 5:in3, 6:in4
-// to forward, 2:HIGH & 3:LOW   5:HIGH & 6:LOW
-// to backward, 2:LOW & 3:HIGH  5:LOW  & 6:HIGH
+// pin 0:pwm, 2:pwm, 3:ce
+// pin 4:pwm, 5:pwm, 6:ce
+// to forward,  0:pwm, 2:low  && 4:pwm, 5:low
+// to backward, 0:low, 2:pwm  && 4:low, 5:pwm
 
   left_speed = speed + left_offset;
   right_speed = speed + right_offset;
@@ -46,27 +51,27 @@ void motors(double speed, double left_offset, double right_offset)
   // left motor
   if (left_speed < 0)  {
     softPwmWrite(0, (int) -left_speed);
-    digitalWrite(2, LOW);
+    softPwmWrite(2, 0);
     digitalWrite(3, HIGH);
   }
   else
   if (left_speed > 0)  {
-    softPwmWrite(0, (int) left_speed);
-    digitalWrite(2, HIGH);
-    digitalWrite(3, LOW);
+    softPwmWrite(0, 0);
+    softPwmWrite(2, (int) left_speed);
+    digitalWrite(3, HIGH);
   }
 
   // right motor
   if (right_speed < 0)  {
     softPwmWrite(4, (int) -right_speed);
-    digitalWrite(5, LOW);
+    softPwmWrite(5, 0);
     digitalWrite(6, HIGH);
   }
   else
   if (right_speed > 0)  {
-    softPwmWrite(4, (int) right_speed);
-    digitalWrite(5, HIGH);
-    digitalWrite(6, LOW);
+    softPwmWrite(4, 0);
+    softPwmWrite(5, (int) right_speed);
+    digitalWrite(6, HIGH);
   }
 }
 
