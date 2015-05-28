@@ -19,7 +19,7 @@ double Kp = 8.0;  //8.0
 double Kp1 = 8.0;
 double Kp2 = 4.0;
 double Ki = 15;   // 1.2/4.0
-double Kd = 0.25; //15.0*2.0; //10.0
+double Kd = 0.10; //15.0*2.0; //10.0
 double K  = 1.0;
 //double K  = 1.9*1.12;
 
@@ -118,7 +118,7 @@ double constrain(double v, double min_v, double max_v)
 double error, last_error, integrated_error;
 double pTerm, iTerm, dTerm;
 double angle;
-double angle_offset = -7.0;
+double angle_offset = -6.0;
 
 double speed;
 double left_offset = 0.0;
@@ -162,26 +162,6 @@ int check_handler()
 
     printf("handler_value = %d, left_offset=%f, right_offset=%f\n", handler_value, left_offset, right_offset);
     
-    
-/*    
-    if (strncmp(buf, "LEFT_TOUCHDOWN", 14) == 0) {
-       right_offset = 10.0;
-       left_offset = -10.0;
-    }
-    if (strncmp(buf, "LEFT_TOUCHUP", 12) == 0) {
-       right_offset = 0.0;
-       left_offset = 0.0;
-    }
-
-    if (strncmp(buf, "RIGHT_TOUCHDOWN", 15) == 0) {
-       right_offset = -10.0;
-       left_offset = 10.0;
-    }
-    if (strncmp(buf, "RIGHT_TOUCHUP", 13) == 0) {
-       right_offset = 0.0;
-       left_offset = 0.0;
-    }
-*/
 
   return 0;
 }
