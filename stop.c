@@ -5,24 +5,23 @@
 #define PIN0	0
 #define INITIAL_VALUE 0
 
+
 int i;
 
 int main()
 {
   wiringPiSetup();
 
-  // initialize left motor (0:pwm, 2:dir & 3:F)
+  // initialize left motor (0:pwm, 2:pwm & 3:ce)
   softPwmCreate(0, INITIAL_VALUE, RANGE);
-  pinMode(2, OUTPUT);
+  softPwmCreate(2, INITIAL_VALUE, RANGE);
   pinMode(3, OUTPUT);
-  digitalWrite(2, HIGH);
   digitalWrite(3, HIGH);
 
-  // initialize right motor (4:pwm, 5:dir & 6:F)
+  // initialize right motor (4:pwm, 5:pwm & 6:ce)
   softPwmCreate(4, INITIAL_VALUE, RANGE);
-  pinMode(5, OUTPUT);
+  softPwmCreate(5, INITIAL_VALUE, RANGE);
   pinMode(6, OUTPUT);
-  digitalWrite(5, HIGH);
   digitalWrite(6, HIGH);
 
 
@@ -49,9 +48,9 @@ int main()
 
 // stop
   softPwmWrite(0, 0);
+  softPwmWrite(2, 0);
   softPwmWrite(4, 0);
-  digitalWrite(3, LOW);
-  digitalWrite(6, LOW);
+  softPwmWrite(5, 0); 
 
   delay(1000);
 

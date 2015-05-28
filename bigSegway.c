@@ -1,4 +1,5 @@
 #include  <wiringPiI2C.h>
+#include  <wiringPi.h>
 #include  <sys/types.h>
 #include  <sys/stat.h>
 #include  <fcntl.h>
@@ -7,13 +8,17 @@
 #include  <math.h>
 #include  <sys/time.h>
 #include  <string.h>
+#include  <signal.h>
+
+#define CHAN_CONFIG_SINGLE	8
+#define CHAN_CONFIG_DIFF	0
 
 
 // PID parameters
-double Kp = 12.0;  //8.0
-double Kp1 = 0.8;
+double Kp = 8.0;  //8.0
+double Kp1 = 8.0;
 double Kp2 = 4.0;
-double Ki = 20;   // 1.2/4.0
+double Ki = 15;   // 1.2/4.0
 double Kd = 0.25; //15.0*2.0; //10.0
 double K  = 1.0;
 //double K  = 1.9*1.12;
@@ -124,13 +129,11 @@ void pid()
 {
   error = last_y - angle_offset - forward_offset;
 
-/*
-  if (error <= 2.0 && error >= -2.0) {
-      Kp = Kp1;
-  } else {
+  if (error <= 1.0 && error >= -1.0) {
       Kp = Kp2;
+  } else {
+      Kp = Kp1;
   }
-*/
 //  Kp = Kp2;
 
   pTerm = Kp * error;
@@ -143,57 +146,24 @@ void pid()
   last_error = error;
 
   speed = constrain(K*(pTerm + iTerm + dTerm), -GUARD_GAIN, GUARD_GAIN); 
-  
 }
 
 int fd_bt;
 char buf[1024];
 char BT_DEV[] = "/dev/ttyAMA0";
 
-void init_bt()
+int check_handler()
 {
-  if ((fd_bt = open(BT_DEV, O_RDWR | O_NONBLOCK)) == -1)
-  {
-    //printf("NonBlocking device %s open failed!! \n", BT_DEV);
-    exit(EXIT_FAILURE);
-  }
-  else
-  {
-    //printf("NonBlocking device %s open OK!! \n", BT_DEV);
-  }
-}
+    int handler_value = myAnalogRead(0, 8, 0);
+//    printf("handler_value = %d\n", handler_value);
 
-#define CMD_START 1
-#define CMD_STOP  2
-#define CMD_FORWARD  3
-#define CMD_BACKWARD 4
+    left_offset = (float) (handler_value - 512) / 512 * 15;
+    right_offset = (float) (handler_value - 512) / 512 * 15 * -1;
 
-int wait_for_start()
-{
-  while(1) {
-    if (read(fd_bt, buf, 1024) != -1)
-    {
-      //printf("%s(%d)\n", buf, strlen(buf));
-      if (strncmp(buf, "START", 5) == 0) {
-        //printf("MATCHED START\n");
-        return 1;
-      }
-    }
-  }
-}
-
-int check_for_cmd()
-{
-  if (read(fd_bt, buf, 1024) != -1)
-  {
-//    printf("%s(%d)\n", buf, strlen(buf));
-//    if (strncmp(buf, "START", 5) == 0)
-//       printf("MATCHED START\n");
-    if (strncmp(buf, "STOP", 4) == 0) {
-//       printf("MATCHED STOP\n");
-       return CMD_STOP;
-    }
-
+    printf("handler_value = %d, left_offset=%f, right_offset=%f\n", handler_value, left_offset, right_offset);
+    
+    
+/*    
     if (strncmp(buf, "LEFT_TOUCHDOWN", 14) == 0) {
        right_offset = 10.0;
        left_offset = -10.0;
@@ -211,32 +181,39 @@ int check_for_cmd()
        right_offset = 0.0;
        left_offset = 0.0;
     }
+*/
 
-    if (strncmp(buf, "FORWARD_TOUCHDOWN", 17) == 0) {
-//       printf("MATCHED FORWARD_TOUCHDOWN\n");
-       forward_offset = 5.0;
-    }
-    if (strncmp(buf, "FORWARD_TOUCHUP", 15) == 0) {
-//       printf("MATCHED FORWARD_TOUCHUP\n");
-       forward_offset = 0.0;
-    }
-    if (strncmp(buf, "BACKWARD_TOUCHDOWN", 18) == 0) {
-//       printf("MATCHED BACKWARD_TOUCHDOWN\n");
-       forward_offset = -5.0;
-    }
-    if (strncmp(buf, "BACKWARD_TOUCHUP", 16) == 0) {
-//       printf("MATCHED BACKWARD_TOUCHUP\n");
-       forward_offset = 0.0;
-    }
-
-
-  }
   return 0;
 }
 
+void mysigint()
+{
+    printf("Graceful stop motors!\n");
+    stop_motors();
+    
+    exit(0);
+}
+
+int handler_value = 0;
+int analogChannel = 0;
+int spiChannel = 0;  // GPIO# pin24 CE0
+int channelConfig = CHAN_CONFIG_SINGLE;
+
 int main()
 {
-  init_bt();
+  loadSpiDriver();
+  wiringPiSetup();
+  spiSetup(spiChannel);
+  
+  pinMode(1, INPUT);
+
+//  init_bt();
+
+  if (signal(SIGINT, mysigint) == SIG_ERR) {
+    printf("Failed to register SIGINT!\n");
+    exit(1);
+  }
+
 
 init_point:
 
@@ -246,8 +223,16 @@ init_point:
   last_error = 0.0;
   
 
-  // wait for START
-  //wait_for_start();
+  // wait for 1, then 0
+  while(1) {
+    if (digitalRead(1) == 1) break;
+    delay(50);
+  }
+
+  while(1) {
+    if (digitalRead(1) == 0) break;
+    delay(50);
+  }
 
   fd = wiringPiI2CSetup (0x68);
   wiringPiI2CWriteReg8 (fd,0x6B,0x00);//disable sleep mode 
@@ -257,6 +242,7 @@ init_point:
 
   deltaT = (double) (getTimestamp() - timer)/1000000.0;
   read_all();
+  check_handler();
 
   last_x = get_x_rotation(accl_scaled_x, accl_scaled_y, accl_scaled_z);
   last_y = get_y_rotation(accl_scaled_x, accl_scaled_y, accl_scaled_z);
@@ -275,6 +261,8 @@ init_point:
     timer = t;
 
     read_all();
+    
+    handler_value = myAnalogRead(spiChannel, channelConfig, analogChannel);
 
     gyro_scaled_x -= gyro_offset_x;
     gyro_scaled_y -= gyro_offset_y;
@@ -297,7 +285,7 @@ init_point:
 
 //    printf("[AFTER] gyro_scaled_y=%f, deltaT=%lf, rotation_y=%f, last_y=%f\n", (double)gyro_scaled_y, (double)deltaT, (double)rotation_y, (double) last_y);
     
-    if (last_y < -45.0 || last_y > 45.0) {
+    if (last_y < -30.0 || last_y > 30.0) {
       stop_motors();
       break;
     }
@@ -305,12 +293,15 @@ init_point:
     pid();
     printf("%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n", error, speed, pTerm, iTerm, dTerm, deltaT);
 
+    check_handler();
+
     motors(speed, left_offset, right_offset);
 
-    if (check_for_cmd() == CMD_STOP) {
-//      printf("WE SHOULD STOP NOW\n");
+
+    if (digitalRead(1) == 1) {
+      printf("WE SHOULD STOP NOW\n");
       stop_motors();
-      //break;
+//      break;
       goto init_point;
     }
 

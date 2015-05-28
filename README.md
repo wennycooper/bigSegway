@@ -16,7 +16,7 @@ https://www.youtube.com/watch?v=QyjIQknHPFw
 
 
 ## Build Instruction 
-    $ gcc -o bigSegway ./bigSegway.c ./motors.c  -lwiringPi -lpthread -lm
+    $ gcc -o ./bigSegway ./bigSegway.c ./motors.c ./readMcp3008.c -lwiringPi -lpthread -lm
 
 
 ## Run 
