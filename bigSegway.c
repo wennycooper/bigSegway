@@ -26,7 +26,7 @@ double K  = 1.0;
 double GUARD_GAIN = 90.0;
 
 
-// Complimentary Filter parameters
+// Complementary Filter parameters
 double K0 = (double) 0.98;
 double K1 = (double) 0.02;
 
@@ -160,7 +160,7 @@ int check_handler()
     left_offset = (float) (handler_value - 512) / 512 * 15;
     right_offset = (float) (handler_value - 512) / 512 * 15 * -1;
 
-    printf("handler_value = %d, left_offset=%f, right_offset=%f\n", handler_value, left_offset, right_offset);
+    //printf("handler_value = %d, left_offset=%f, right_offset=%f\n", handler_value, left_offset, right_offset);
     
 
   return 0;
@@ -203,6 +203,7 @@ init_point:
   last_error = 0.0;
   
 
+/*
   // wait for 1, then 0
   while(1) {
     if (digitalRead(1) == 1) break;
@@ -213,6 +214,7 @@ init_point:
     if (digitalRead(1) == 0) break;
     delay(50);
   }
+*/
 
   fd = wiringPiI2CSetup (0x68);
   wiringPiI2CWriteReg8 (fd,0x6B,0x00);//disable sleep mode 
@@ -271,19 +273,20 @@ init_point:
     }
 
     pid();
-    printf("%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n", error, speed, pTerm, iTerm, dTerm, deltaT);
+    //printf("%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n", error, speed, pTerm, iTerm, dTerm, deltaT);
 
     check_handler();
 
     motors(speed, left_offset, right_offset);
 
-
+/*
     if (digitalRead(1) == 1) {
       printf("WE SHOULD STOP NOW\n");
       stop_motors();
 //      break;
       goto init_point;
     }
+*/
 
     //delay(10);
   }
